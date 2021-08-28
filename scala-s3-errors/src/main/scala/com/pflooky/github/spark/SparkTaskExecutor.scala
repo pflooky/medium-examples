@@ -7,28 +7,36 @@ import org.slf4j.LoggerFactory
 object SparkTaskExecutor extends App {
 
   private val LOGGER = LoggerFactory.getLogger(getClass)
-  private val USERS = List("upload", "uploadWithList", "uploadWithListAndDelete", "download", "downloadWithList")
+  private val USER = "customuser"
 
   def apply(): Unit = {
     val sparkSession = createSparkSession(createSparkConf())
-    val filePath = "s3a://secret-bucket/top-secret/Install-Linux-tar.txt"
-    val testUploadFilePath = "/tmp/test.txt"
+    val readFilePath = "s3a://secret-bucket/README.md"
+    val writeFilePath = "s3a://secret-bucket/data/hello_world.csv"
 
-    USERS.foreach(user => {
-      LOGGER.info(s"user=$user, path=$filePath, msg=Attempting to get object with upload user")
-      try {
-        val file = sparkSession.read.text(filePath)
-        file.show()
-      } catch {
-        case ex: Exception => LOGGER.warn(s"user=$user, path=$filePath, msg=Failed to get file from S3, ex-msg=${ex.getMessage}")
-      }
-    })
+    LOGGER.info(s"user=$USER, path=$readFilePath, msg=Attempting to get object with user")
+    try {
+      sparkSession.read.text(readFilePath).show()
+    } catch {
+      case ex: Exception => LOGGER.error(s"user=$USER, path=$readFilePath, msg=Failed to get file from S3, ex-msg=${ex.getMessage}")
+    }
+
+    LOGGER.info(s"user=$USER, path=$writeFilePath, msg=Attempting to push object with user")
+    try {
+      import sparkSession.implicits._
+      Seq("hello", "world").toDF()
+        .write
+        .csv(writeFilePath)
+      sparkSession.read.csv(writeFilePath).show()
+    } catch {
+      case ex: Exception => LOGGER.error(s"user=$USER, path=$writeFilePath, msg=Failed to write data to S3, ex-msg=${ex.getMessage}")
+    }
   }
 
   def createSparkSession(sparkConf: SparkConf): SparkSession = {
     SparkSession.builder()
       .appName("spark-s3-test-job")
-      .master("local[4]")
+      .master("local[1]")
       .config(sparkConf)
       .getOrCreate()
   }
@@ -38,15 +46,13 @@ object SparkTaskExecutor extends App {
     conf.set("fs.s3a.endpoint", "http://localhost:9000")
     conf.set("fs.s3a.path.style.access", "true")
     conf.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider")
-    useUploadUser(conf)
+    useCustomerUser(conf)
     conf
   }
 
-  //Exception in thread "main" java.nio.file.AccessDeniedException: s3a://secret-bucket/top-secret/Install-Linux-tar.txt: getFileStatus on s3a://secret-bucket/top-secret/Install-Linux-tar.txt
-
-  private def useUploadUser(conf: SparkConf) = {
-    conf.set("fs.s3a.access.key", "uploaduser")
-    conf.set("fs.s3a.secret.key", "uploaduser123")
+  private def useCustomerUser(conf: SparkConf) = {
+    conf.set("fs.s3a.access.key", USER)
+    conf.set("fs.s3a.secret.key", "customuser123")
   }
 
   apply()
