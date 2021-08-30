@@ -1,7 +1,7 @@
 package com.pflooky.github.spark
 
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.slf4j.LoggerFactory
 
 object SparkTaskExecutor extends App {
@@ -26,6 +26,7 @@ object SparkTaskExecutor extends App {
       import sparkSession.implicits._
       Seq("hello", "world").toDF()
         .write
+        .mode(SaveMode.Overwrite)
         .csv(writeFilePath)
       sparkSession.read.csv(writeFilePath).show()
     } catch {

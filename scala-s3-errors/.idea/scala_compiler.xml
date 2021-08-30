@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ScalaCompilerConfiguration">
-    <profile name="Gradle 2" modules="scala-s3-errors.main,scala-s3-errors.test">
+    <profile name="Gradle 1" modules="scala-s3-errors.main,scala-s3-errors.test">
       <option name="deprecationWarnings" value="true" />
       <option name="uncheckedWarnings" value="true" />
-      <parameters>
-        <parameter value="-target:jvm-1.8" />
-      </parameters>
     </profile>
   </component>
 </project>
